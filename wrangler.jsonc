@@ -1,0 +1,31 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "copilot-proxy",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-08-27",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "run_worker_first": true,
+    "not_found_handling": "404-page"
+  },
+  "durable_objects": {
+    "bindings": [
+      { "name": "USER_HUB", "class_name": "UserHub" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["UserHub"] }
+  ],
+  "vars": {
+    "GITHUB_CLIENT_ID": "Iv1.b507a08c87ecfe98",
+    "VSCODE_VERSION": "1.109.3",
+    "COPILOT_CHAT_VERSION": "0.37.6",
+    "GITHUB_API_VERSION": "2026-03-10"
+  },
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  }
+}

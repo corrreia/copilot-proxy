@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <meta name="theme-color" content="#0d1117">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <title>Copilot Edge Console</title>
+  <link rel="stylesheet" href="/styles.css?v=20260828-2">
+  <script src="/app.js?v=20260828-2" type="module"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="Copilot Edge Console home">
+      <span class="brand-mark" aria-hidden="true">CE</span>
+      <span>Copilot Edge</span>
+    </a>
+    <div class="account">
+      <span class="presence"><span id="live-dot" class="presence-dot" aria-hidden="true"></span><span id="live-label">Connecting</span></span>
+      <span id="user-email" class="user-email"></span>
+      <a class="button button-quiet" href="/cdn-cgi/access/logout">Sign out</a>
+    </div>
+  </header>
+
+  <main id="main" class="shell" tabindex="-1">
+    <section class="hero" aria-labelledby="page-title">
+      <div>
+        <p class="eyebrow">Cloudflare Worker</p>
+        <h1 id="page-title">Your Copilot API, at the edge.</h1>
+        <p>Connect GitHub, create a private key, and use one OpenAI-compatible endpoint. Activity arrives live over WebSockets.</p>
+      </div>
+      <div class="endpoint-card">
+        <span class="field-label">OpenAI base URL</span>
+        <div class="copy-row">
+          <code id="endpoint">Loading…</code>
+          <button class="icon-button" id="copy-endpoint" type="button" aria-label="Copy OpenAI base URL" title="Copy base URL">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="11" height="11" rx="2"></rect><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"></path></svg>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <div id="page-error" class="notice notice-error" role="alert" hidden></div>
+
+    <section class="stats-grid" aria-label="API overview">
+      <article class="stat-card"><span class="stat-label">Total requests</span><strong id="total-requests">—</strong></article>
+      <article class="stat-card"><span class="stat-label">Successful</span><strong id="successful-requests">—</strong></article>
+      <article class="stat-card"><span class="stat-label">Active keys</span><strong id="active-keys">—</strong></article>
+      <article class="stat-card"><span class="stat-label">GitHub</span><strong id="github-stat">—</strong></article>
+    </section>
+
+    <div class="content-grid">
+      <section class="panel connection-panel" aria-labelledby="github-title">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Provider</p>
+            <h2 id="github-title">GitHub Copilot</h2>
+          </div>
+          <span id="github-badge" class="badge">Not connected</span>
+        </div>
+        <div id="github-disconnected">
+          <p class="panel-copy">Authorize this Worker with the GitHub account that owns your Copilot subscription. The OAuth token is encrypted before durable storage.</p>
+          <button id="connect-github" class="button button-primary" type="button">Connect GitHub</button>
+        </div>
+        <div id="github-device" class="device-flow" hidden>
+          <p>Open GitHub, then enter this one-time code:</p>
+          <div class="device-code-row">
+            <code id="device-code" class="device-code"></code>
+            <button id="copy-device-code" class="button button-secondary" type="button">Copy code</button>
+          </div>
+          <a id="open-github" class="button button-primary" href="https://github.com/login/device" target="_blank" rel="noopener">Open GitHub</a>
+          <p id="device-status" class="muted" role="status">Waiting for authorization…</p>
+        </div>
+        <div id="github-connected" hidden>
+          <p class="connected-line"><span class="check" aria-hidden="true">✓</span> Connected as <strong id="github-login"></strong></p>
+          <div id="quota-summary" class="quota-summary" aria-live="polite">Loading Copilot usage…</div>
+          <button id="disconnect-github" class="button button-danger" type="button">Disconnect GitHub</button>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="settings-title">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Advanced routing</p>
+            <h2 id="settings-title">Account type</h2>
+          </div>
+        </div>
+        <form id="settings-form">
+          <label for="account-type">Copilot account type</label>
+          <select id="account-type" name="accountType">
+            <option value="individual">Individual</option>
+            <option value="business">Business</option>
+            <option value="enterprise">Enterprise</option>
+          </select>
+          <p class="field-help">Individual is the default. Change this only when the connected Copilot subscription is managed by a Business or Enterprise account.</p>
+          <button class="button button-secondary" type="submit">Save account type</button>
+        </form>
+      </section>
+    </div>
+
+    <section class="panel keys-panel" aria-labelledby="keys-title">
+      <div class="panel-heading panel-heading-action">
+        <div>
+          <p class="eyebrow">Credentials</p>
+          <h2 id="keys-title">Private API keys</h2>
+          <p class="panel-copy">Keys are hashed at rest. A new key is shown only once.</p>
+        </div>
+        <button id="new-key" class="button button-primary" type="button">Create API key</button>
+      </div>
+      <form id="key-form" class="inline-form" hidden>
+        <div class="grow">
+          <label for="key-name">Key name</label>
+          <input id="key-name" name="name" type="text" minlength="2" maxlength="64" autocomplete="off" placeholder="e.g. MacBook CLI" required>
+        </div>
+        <button class="button button-primary" type="submit">Generate key</button>
+        <button id="cancel-key" class="button button-quiet" type="button">Cancel</button>
+      </form>
+      <div id="keys-empty" class="empty-state">No API keys yet. Create one to call the endpoint.</div>
+      <div class="table-wrap" id="keys-table-wrap" hidden>
+        <table>
+          <thead><tr><th scope="col">Name</th><th scope="col">Key</th><th scope="col">Created</th><th scope="col">Last used</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
+          <tbody id="keys-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="models-title">
+      <div class="panel-heading panel-heading-action">
+        <div>
+          <p class="eyebrow">Catalog</p>
+          <h2 id="models-title">Available models <span id="models-count" class="heading-count"></span></h2>
+          <p class="panel-copy">Use the exact model ID with the OpenAI base URL above. Copy a ready-to-fill environment snippet for any model.</p>
+        </div>
+        <button id="refresh-models" class="button button-secondary" type="button">Refresh models</button>
+      </div>
+      <div id="models-loading" class="empty-state">Connect GitHub to load the model catalog.</div>
+      <div class="table-wrap" id="models-table-wrap" hidden>
+        <table>
+          <thead><tr><th scope="col">Model ID</th><th scope="col">Name</th><th scope="col">Provider</th><th scope="col">Endpoints</th><th scope="col">Context</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
+          <tbody id="models-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="activity-title">
+      <div class="panel-heading panel-heading-action">
+        <div>
+          <p class="eyebrow">Live stream</p>
+          <h2 id="activity-title">Recent API activity</h2>
+        </div>
+        <span class="websocket-note">No polling</span>
+      </div>
+      <div id="activity-empty" class="empty-state">Requests made with your private keys will appear here in real time.</div>
+      <div class="table-wrap" id="activity-table-wrap" hidden>
+        <table>
+          <thead><tr><th scope="col">Time</th><th scope="col">Endpoint</th><th scope="col">Model</th><th scope="col">Status</th><th scope="col">Latency</th></tr></thead>
+          <tbody id="activity-body"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="key-dialog" aria-labelledby="key-dialog-title">
+    <div class="dialog-content">
+      <div class="dialog-icon" aria-hidden="true">✓</div>
+      <h2 id="key-dialog-title">API key created</h2>
+      <p>Copy this key now. For your security, it cannot be shown again.</p>
+      <label for="new-secret">Private API key</label>
+      <div class="copy-row secret-row">
+        <input id="new-secret" type="text" readonly>
+        <button id="copy-secret" class="button button-primary" type="button">Copy key</button>
+      </div>
+      <div class="dialog-actions"><button id="close-dialog" class="button button-secondary" type="button">I’ve saved it</button></div>
+    </div>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

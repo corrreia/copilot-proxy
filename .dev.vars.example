@@ -1,0 +1,4 @@
+# Copy to .dev.vars for local development only. Never commit .dev.vars.
+# Generate with: openssl rand -base64 32
+TOKEN_ENCRYPTION_KEY="replace-with-base64-encoded-32-byte-key"
+LOCAL_DEV_EMAIL="developer@example.com"

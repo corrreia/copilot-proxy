@@ -1,0 +1,27 @@
+{
+  "name": "copilot-proxy",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "deploy:dry-run": "wrangler deploy --dry-run",
+    "types": "wrangler types src/worker-configuration.d.ts",
+    "types:check": "wrangler types --check src/worker-configuration.d.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "check": "npm run types:check && npm run typecheck && npm test && npm run deploy:dry-run"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-plugin": "^1.0.0",
+    "@cloudflare/workers-types": "^5.20260827.0",
+    "@types/node": "^26.4.0",
+    "typescript": "^5.9.0",
+    "vitest": "^4.1.0",
+    "wrangler": "^4.0.0"
+  },
+  "dependencies": {
+    "jose": "^6.2.10"
+  }
+}
